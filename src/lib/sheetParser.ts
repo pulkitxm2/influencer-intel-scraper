@@ -1,3 +1,4 @@
+
 import { Influencer } from "@/types";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -47,30 +48,27 @@ function parseCSV(csvData: string): Influencer[] {
     throw new Error("CSV file appears to be empty or only contains headers");
   }
   
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-  const urlColumnIndex = headers.findIndex(h => 
-    h.includes('url') || h.includes('link') || h.includes('profile')
-  );
-  
-  if (urlColumnIndex === -1) {
-    throw new Error("Could not find a URL column in the CSV file");
-  }
-  
   const influencers: Influencer[] = [];
   
-  for (let i = 1; i < lines.length; i++) {
+  // Process each line as a potential URL
+  for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
     
-    const columns = line.split(',');
-    const url = columns[urlColumnIndex]?.trim();
+    // Try to extract a URL from the line
+    const url = line.split(',')[0].trim();
     
-    if (url) {
-      const influencer = createInfluencerFromURL(url);
-      if (influencer) {
-        influencers.push(influencer);
-      }
+    // Skip if it doesn't look like a URL
+    if (!url.startsWith('http')) continue;
+    
+    const influencer = createInfluencerFromURL(url);
+    if (influencer) {
+      influencers.push(influencer);
     }
+  }
+  
+  if (influencers.length === 0) {
+    throw new Error("No valid influencer URLs found in the file");
   }
   
   return influencers;
@@ -78,17 +76,9 @@ function parseCSV(csvData: string): Influencer[] {
 
 // Mock function for Excel parsing in this demo
 function mockParseExcel(data: string): Influencer[] {
+  // For simplicity, we'll just parse it as CSV
   // In a real app, we'd use a library like SheetJS (xlsx)
-  // This is just a mock for demonstration
-  const mockUrls = [
-    "https://www.instagram.com/instagram/",
-    "https://www.youtube.com/c/youtube",
-    "https://www.instagram.com/cristiano/",
-    "https://www.youtube.com/mkbhd",
-    "https://www.instagram.com/nature/"
-  ];
-  
-  return mockUrls.map(url => createInfluencerFromURL(url)!);
+  return parseCSV(data);
 }
 
 export function createInfluencerFromURL(url: string): Influencer | null {
@@ -113,6 +103,11 @@ export function createInfluencerFromURL(url: string): Influencer | null {
       }
     } else {
       return null; // Not a supported platform
+    }
+    
+    if (!username) {
+      console.error("Could not extract username from URL:", url);
+      return null;
     }
     
     return {
