@@ -1,279 +1,232 @@
 
-import { Influencer, InfluencerMetrics } from "@/types";
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Instagram, Youtube, Users, Eye, Globe, Speech, DollarSign, MapPin, AlertCircle } from "lucide-react";
+import { Influencer, InfluencerMetrics } from "@/types";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AlertCircle, MapPin, Users, Video, Eye, TrendingUp } from 'lucide-react';
 
 interface InfluencerMetricsViewProps {
   influencer: Influencer;
-  metrics?: InfluencerMetrics;
+  metrics: InfluencerMetrics | undefined;
 }
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28CFF', '#FF6B6B'];
+
 export function InfluencerMetricsView({ influencer, metrics }: InfluencerMetricsViewProps) {
-  const renderPlatformIcon = () => {
-    switch (influencer.platform) {
-      case "instagram":
-        return <Instagram className="h-5 w-5 text-pink-500" />;
-      case "youtube":
-        return <Youtube className="h-5 w-5 text-red-500" />;
-      default:
-        return null;
+  if (!metrics) {
+    if (influencer.isProcessed) {
+      return (
+        <Card className="h-full">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl flex items-center">
+              {influencer.username}'s Metrics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center h-64 text-center">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No metrics data available for this influencer.</p>
+              {influencer.error && (
+                <p className="text-sm text-destructive mt-2">{influencer.error}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      );
     }
-  };
 
-  // Format large numbers with k, M suffix
-  const formatNumber = (num?: number) => {
-    if (num === undefined) return "N/A";
-    if (num < 1000) return num;
-    if (num < 1000000) return `${(num / 1000).toFixed(1)}k`;
-    return `${(num / 1000000).toFixed(1)}M`;
-  };
+    return (
+      <Card className="h-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xl flex items-center">
+            {influencer.username}'s Metrics
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <p className="text-muted-foreground">
+              Process this influencer to view their metrics.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  // For loading state when metrics are being processed
-  const isLoading = influencer.isProcessing || (!metrics && !influencer.error);
-
-  // Gender split data for pie chart
-  const genderData = metrics?.genderSplit ? [
-    { name: 'Male', value: metrics.genderSplit.male, color: '#7c4dff' },
-    { name: 'Female', value: metrics.genderSplit.female, color: '#ff49db' },
-    { name: 'Other', value: metrics.genderSplit.other, color: '#00b8d9' }
+  // Prepare data for charts
+  const genderData = metrics.genderSplit ? [
+    { name: 'Male', value: metrics.genderSplit.male },
+    { name: 'Female', value: metrics.genderSplit.female },
+    { name: 'Other', value: metrics.genderSplit.other }
   ] : [];
 
-  // Age split data for bar chart
-  const ageData = metrics?.ageSplit ? Object.entries(metrics.ageSplit).map(([age, value]) => ({
-    age,
-    value
-  })) : [];
+  const ageData = metrics.ageSplit ? [
+    { name: '13-17', value: metrics.ageSplit['13-17'] },
+    { name: '18-24', value: metrics.ageSplit['18-24'] },
+    { name: '25-34', value: metrics.ageSplit['25-34'] },
+    { name: '35-44', value: metrics.ageSplit['35-44'] },
+    { name: '45-54', value: metrics.ageSplit['45-54'] },
+    { name: '55+', value: metrics.ageSplit['55+'] }
+  ] : [];
 
-  // State split data
-  const stateData = metrics?.stateSplit ? 
-    Object.entries(metrics.stateSplit)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([state, value]) => ({
-        state,
-        value: (value * 100).toFixed(1)
-      })) 
+  const stateData = metrics.stateSplit 
+    ? Object.entries(metrics.stateSplit)
+        .map(([state, value]) => ({ name: state, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5) // Only show top 5 states
     : [];
 
   return (
     <Card className="h-full">
-      <CardHeader className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {renderPlatformIcon()}
-            <CardTitle>{influencer.username || "Unknown"}</CardTitle>
-          </div>
-          <a 
-            href={influencer.profileUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-sm text-brand-500 hover:underline"
-          >
-            View Profile
-          </a>
-        </div>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl flex items-center">
+          {influencer.username}'s Metrics
+        </CardTitle>
       </CardHeader>
-      
-      {influencer.error ? (
-        <CardContent className="p-6 pt-0">
-          <div className="flex flex-col items-center justify-center p-8 text-center">
-            <div className="rounded-full bg-destructive/10 p-3 mb-4">
-              <AlertCircle className="h-6 w-6 text-destructive" />
-            </div>
-            <p className="text-destructive font-medium">Error Processing Profile</p>
-            <p className="text-sm text-muted-foreground mt-2">{influencer.error}</p>
-          </div>
-        </CardContent>
-      ) : isLoading ? (
-        <CardContent className="p-6 pt-0">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <Card key={index} className="animate-pulse-slow">
-                <CardContent className="p-4">
-                  <div className="h-12 bg-muted rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <div className="h-64 bg-muted rounded animate-pulse-slow" />
-        </CardContent>
-      ) : (
-        <CardContent className="p-6 pt-0">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4 flex items-center space-x-4">
-                <div className="rounded-full bg-primary/10 p-3">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Followers</p>
-                  <p className="text-2xl font-bold">{formatNumber(metrics?.followerCount)}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 flex items-center space-x-4">
-                <div className="rounded-full bg-amber-500/10 p-3">
-                  <Eye className="h-5 w-5 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Avg. Views</p>
-                  <p className="text-2xl font-bold">{formatNumber(metrics?.avgViews)}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 flex items-center space-x-4">
-                <div className="rounded-full bg-green-500/10 p-3">
-                  <Globe className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Avg. Reach</p>
-                  <p className="text-2xl font-bold">{formatNumber(metrics?.avgReach)}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 flex items-center space-x-4">
-                <div className="rounded-full bg-blue-500/10 p-3">
-                  <Speech className="h-5 w-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Language</p>
-                  <p className="text-2xl font-bold">{metrics?.contentLanguage || "N/A"}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 flex items-center space-x-4">
-                <div className="rounded-full bg-purple-500/10 p-3">
-                  <MapPin className="h-5 w-5 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Location</p>
-                  <p className="text-2xl font-bold">{metrics?.location || "N/A"}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 flex items-center space-x-4">
-                <div className="rounded-full bg-rose-500/10 p-3">
-                  <DollarSign className="h-5 w-5 text-rose-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Branded Views</p>
-                  <p className="text-2xl font-bold">{formatNumber(metrics?.avgBrandedViews)}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <StatCard 
+            icon={<Users className="h-4 w-4" />}
+            title="Followers"
+            value={metrics.followerCount?.toLocaleString() || 'N/A'}
+          />
+          <StatCard 
+            icon={<MapPin className="h-4 w-4" />}
+            title="Location"
+            value={metrics.location || 'N/A'}
+          />
+          <StatCard 
+            icon={<Video className="h-4 w-4" />}
+            title="Content Language"
+            value={metrics.contentLanguage || 'N/A'}
+          />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <StatCard 
+            icon={<Eye className="h-4 w-4" />}
+            title="Avg. Views"
+            value={metrics.avgViews?.toLocaleString() || 'N/A'}
+          />
+          <StatCard 
+            icon={<TrendingUp className="h-4 w-4" />}
+            title="Avg. Reach"
+            value={metrics.avgReach?.toLocaleString() || 'N/A'}
+          />
+          <StatCard 
+            icon={<Eye className="h-4 w-4" />}
+            title="Avg. Branded Views"
+            value={metrics.avgBrandedViews?.toLocaleString() || 'N/A'}
+          />
+        </div>
+        
+        <Tabs defaultValue="demographics" className="w-full">
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="demographics">Demographics</TabsTrigger>
+            <TabsTrigger value="age">Age Distribution</TabsTrigger>
+            <TabsTrigger value="location">Location</TabsTrigger>
+          </TabsList>
           
-          <Tabs defaultValue="demographics">
-            <TabsList className="mb-4">
-              <TabsTrigger value="demographics">Demographics</TabsTrigger>
-              <TabsTrigger value="geography">Geography</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="demographics" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="p-4">
-                    <CardTitle className="text-base">Gender Split</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0 h-64">
-                    {genderData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={genderData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                            label={({ name, value }) => `${name}: ${(value * 100).toFixed(0)}%`}
-                          >
-                            {genderData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => `${(value * 100).toFixed(1)}%`} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center">
-                        <p className="text-muted-foreground">No gender data available</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="p-4">
-                    <CardTitle className="text-base">Age Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0 h-64">
-                    {ageData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={ageData}>
-                          <XAxis dataKey="age" />
-                          <YAxis tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
-                          <Tooltip formatter={(value) => `${(value * 100).toFixed(1)}%`} />
-                          <Bar dataKey="value" fill="#7c4dff" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center">
-                        <p className="text-muted-foreground">No age data available</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+          <TabsContent value="demographics" className="pt-4">
+            {genderData.length > 0 ? (
+              <div className="flex flex-col items-center">
+                <h3 className="text-sm font-medium mb-4">Gender Distribution</h3>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={genderData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {genderData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="geography">
-              <Card>
-                <CardHeader className="p-4">
-                  <CardTitle className="text-base">Top Locations</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  {stateData.length > 0 ? (
-                    <div className="space-y-4">
-                      {stateData.map((item, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>{item.state}</span>
-                            <span className="font-medium">{item.value}%</span>
-                          </div>
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-brand-500 rounded-full" 
-                              style={{ width: `${item.value}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="h-64 flex items-center justify-center">
-                      <p className="text-muted-foreground">No location data available</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      )}
+            ) : (
+              <div className="flex items-center justify-center h-64">
+                <p className="text-muted-foreground">No demographic data available</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="age" className="pt-4">
+            {ageData.length > 0 ? (
+              <div className="flex flex-col items-center">
+                <h3 className="text-sm font-medium mb-4">Age Distribution</h3>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={ageData}>
+                      <XAxis dataKey="name" />
+                      <YAxis tickFormatter={(value) => `${Number(value).toFixed(0)}%`} />
+                      <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+                      <Bar dataKey="value" fill="#8884d8">
+                        {ageData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-64">
+                <p className="text-muted-foreground">No age data available</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="location" className="pt-4">
+            {stateData.length > 0 ? (
+              <div className="flex flex-col items-center">
+                <h3 className="text-sm font-medium mb-4">Top Locations</h3>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart layout="vertical" data={stateData}>
+                      <XAxis type="number" tickFormatter={(value) => `${Number(value).toFixed(0)}%`} />
+                      <YAxis type="category" dataKey="name" width={100} />
+                      <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+                      <Bar dataKey="value" fill="#8884d8">
+                        {stateData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-64">
+                <p className="text-muted-foreground">No location data available</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
     </Card>
+  );
+}
+
+function StatCard({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) {
+  return (
+    <div className="border rounded-lg p-4">
+      <div className="flex items-center gap-2 mb-1">
+        {icon}
+        <p className="text-sm text-muted-foreground">{title}</p>
+      </div>
+      <p className="text-lg font-semibold">{value}</p>
+    </div>
   );
 }
