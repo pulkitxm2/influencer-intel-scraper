@@ -49,7 +49,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     if (fileType !== 'csv' && fileType !== 'xlsx' && fileType !== 'xls') {
       toast({
         title: "Invalid file type",
-        description: "Please upload a CSV or Excel file",
+        description: "Please upload a Google Sheet file (.csv, .xlsx, .xls)",
         variant: "destructive",
       });
       return;
@@ -59,13 +59,13 @@ export function FileUpload({ onUpload }: FileUploadProps) {
       const influencers = await parseSheetData(file);
       onUpload(influencers);
       toast({
-        title: "File uploaded successfully",
+        title: "Sheet uploaded successfully",
         description: `Found ${influencers.length} influencer profiles`,
       });
     } catch (error) {
       console.error("Error parsing file:", error);
       toast({
-        title: "Error parsing file",
+        title: "Error parsing sheet",
         description: "Please check the file format and try again",
         variant: "destructive",
       });
@@ -88,12 +88,12 @@ export function FileUpload({ onUpload }: FileUploadProps) {
           <Upload className="h-8 w-8 text-muted-foreground" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Upload your influencer sheet</h3>
+          <h3 className="text-lg font-semibold">Upload your Google Sheet</h3>
           <p className="text-sm text-muted-foreground">
-            Drag and drop your CSV or Excel file, or click to browse
+            Drag and drop your exported Google Sheet, or click to browse
           </p>
           <p className="text-xs text-muted-foreground">
-            File should contain URLs to Instagram or YouTube profiles
+            First column should contain YouTube or Instagram profile URLs
           </p>
         </div>
         <div className="flex gap-2">

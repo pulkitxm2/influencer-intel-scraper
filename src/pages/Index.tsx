@@ -198,7 +198,7 @@ const Index = () => {
           <div>
             <h1 className="text-3xl font-bold text-foreground">CrackedDevs - Assignment</h1>
             <p className="text-muted-foreground">
-              Analyze influencer metrics across Instagram and YouTube
+              Analyze influencer metrics from your Google Sheet
             </p>
           </div>
           
@@ -210,13 +210,7 @@ const Index = () => {
         
         <div className="grid grid-cols-1 gap-8">
           {data.influencers.length === 0 ? (
-            <>
-              <FileUpload onUpload={handleUpload} />
-              <div className="text-center text-muted-foreground">
-                <p>- OR -</p>
-              </div>
-              <ManualInfluencerInput onAdd={handleAddManual} />
-            </>
+            <FileUpload onUpload={handleUpload} />
           ) : (
             <>
               <ManualInfluencerInput onAdd={handleAddManual} />
