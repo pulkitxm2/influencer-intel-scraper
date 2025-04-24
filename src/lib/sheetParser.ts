@@ -1,5 +1,5 @@
-import { v4 as uuidv4 } from 'uuid';
 import { Influencer } from "@/types";
+import { v4 as uuidv4 } from 'uuid';
 
 export async function parseSheetData(file: File): Promise<Influencer[]> {
   return new Promise((resolve, reject) => {
@@ -47,15 +47,25 @@ function parseCSV(csvData: string): Influencer[] {
     throw new Error("CSV file appears to be empty or only contains headers");
   }
   
-  // Look for URLs in the first column
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const urlColumnIndex = headers.findIndex(h => 
+    h.includes('url') || h.includes('link') || h.includes('profile')
+  );
+  
+  if (urlColumnIndex === -1) {
+    throw new Error("Could not find a URL column in the CSV file");
+  }
+  
   const influencers: Influencer[] = [];
   
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
     
-    const url = line.split(',')[0]?.trim();
-    if (url && (url.includes('youtube.com') || url.includes('instagram.com'))) {
+    const columns = line.split(',');
+    const url = columns[urlColumnIndex]?.trim();
+    
+    if (url) {
       const influencer = createInfluencerFromURL(url);
       if (influencer) {
         influencers.push(influencer);
@@ -66,22 +76,19 @@ function parseCSV(csvData: string): Influencer[] {
   return influencers;
 }
 
+// Mock function for Excel parsing in this demo
 function mockParseExcel(data: string): Influencer[] {
-  // For Excel files, we'll just process the first column as URLs
-  const lines = data.split('\n');
-  const influencers: Influencer[] = [];
+  // In a real app, we'd use a library like SheetJS (xlsx)
+  // This is just a mock for demonstration
+  const mockUrls = [
+    "https://www.instagram.com/instagram/",
+    "https://www.youtube.com/c/youtube",
+    "https://www.instagram.com/cristiano/",
+    "https://www.youtube.com/mkbhd",
+    "https://www.instagram.com/nature/"
+  ];
   
-  for (const line of lines) {
-    const url = line.trim();
-    if (url && (url.includes('youtube.com') || url.includes('instagram.com'))) {
-      const influencer = createInfluencerFromURL(url);
-      if (influencer) {
-        influencers.push(influencer);
-      }
-    }
-  }
-  
-  return influencers;
+  return mockUrls.map(url => createInfluencerFromURL(url)!);
 }
 
 export function createInfluencerFromURL(url: string): Influencer | null {
