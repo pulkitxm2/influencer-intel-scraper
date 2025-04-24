@@ -1,4 +1,3 @@
-
 import { Influencer } from "@/types";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -92,7 +91,7 @@ function mockParseExcel(data: string): Influencer[] {
   return mockUrls.map(url => createInfluencerFromURL(url)!);
 }
 
-function createInfluencerFromURL(url: string): Influencer | null {
+export function createInfluencerFromURL(url: string): Influencer | null {
   try {
     const urlObj = new URL(url.replace(/\/$/, ''));
     const hostname = urlObj.hostname;

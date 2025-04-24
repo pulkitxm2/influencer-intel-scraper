@@ -1,10 +1,10 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { FileUpload } from "@/components/FileUpload";
 import { InfluencerList } from "@/components/InfluencerList";
+import { ManualInfluencerInput } from "@/components/ManualInfluencerInput";
 import { Influencer, InfluencerMetrics, SheetData } from "@/types";
 import { processInfluencer } from "@/lib/influencerScraper";
 import { exportToCSV } from "@/lib/exportData";
@@ -18,11 +18,28 @@ const Index = () => {
   });
   const [isProcessingAll, setIsProcessingAll] = useState(false);
 
+  useEffect(() => {
+    // Auto-process first influencer when added
+    const unprocessedInfluencer = data.influencers.find(
+      inf => !inf.isProcessed && !inf.isProcessing
+    );
+    if (unprocessedInfluencer) {
+      handleProcess(unprocessedInfluencer);
+    }
+  }, [data.influencers]);
+
   const handleUpload = (influencers: Influencer[]) => {
     setData({
       influencers,
       metrics: {}
     });
+  };
+
+  const handleAddManual = (influencer: Influencer) => {
+    setData(prev => ({
+      ...prev,
+      influencers: [...prev.influencers, influencer]
+    }));
   };
 
   const handleProcess = async (influencer: Influencer) => {
@@ -179,7 +196,7 @@ const Index = () => {
       <main className="flex-1 container py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Influencer Intel</h1>
+            <h1 className="text-3xl font-bold text-foreground">CrackedDevs - Assignment</h1>
             <p className="text-muted-foreground">
               Analyze influencer metrics across Instagram and YouTube
             </p>
@@ -193,22 +210,31 @@ const Index = () => {
         
         <div className="grid grid-cols-1 gap-8">
           {data.influencers.length === 0 ? (
-            <FileUpload onUpload={handleUpload} />
+            <>
+              <FileUpload onUpload={handleUpload} />
+              <div className="text-center text-muted-foreground">
+                <p>- OR -</p>
+              </div>
+              <ManualInfluencerInput onAdd={handleAddManual} />
+            </>
           ) : (
-            <InfluencerList 
-              influencers={data.influencers}
-              metrics={data.metrics}
-              onProcess={handleProcess}
-              onProcessAll={handleProcessAll}
-              isProcessingAll={isProcessingAll}
-            />
+            <>
+              <ManualInfluencerInput onAdd={handleAddManual} />
+              <InfluencerList 
+                influencers={data.influencers}
+                metrics={data.metrics}
+                onProcess={handleProcess}
+                onProcessAll={handleProcessAll}
+                isProcessingAll={isProcessingAll}
+              />
+            </>
           )}
         </div>
       </main>
       
       <footer className="border-t bg-muted/40">
         <div className="container py-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Influencer Intel. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} CrackedDevs. All rights reserved.</p>
         </div>
       </footer>
     </div>

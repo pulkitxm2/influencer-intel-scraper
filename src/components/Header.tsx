@@ -1,6 +1,4 @@
 
-import { UserCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ModeToggle } from "./ModeToggle";
 
 export function Header() {
@@ -41,15 +39,11 @@ export function Header() {
                 />
               </svg>
             </div>
-            <h1 className="text-xl font-bold">Influencer Intel</h1>
+            <h1 className="text-xl font-bold">CrackedDevs - Assignment</h1>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <ModeToggle />
-          <Button variant="ghost" size="icon">
-            <UserCircle className="h-5 w-5" />
-            <span className="sr-only">User</span>
-          </Button>
         </div>
       </div>
     </header>
